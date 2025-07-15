@@ -50,25 +50,25 @@
   - Display progress messages during polling
   - _Requirements: 4.2, 4.3_
 
-- [ ] 9. Implement transcription result retrieval
+- [x] 9. Implement transcription result retrieval
   - Create function to fetch transcription results from completed job
   - Parse transcription JSON response to extract text content
   - Handle cases where transcription results are empty or malformed
   - _Requirements: 5.1, 5.3_
 
-- [ ] 10. Implement resource cleanup functionality
+- [x] 10. Implement resource cleanup functionality
   - Create function to delete uploaded S3 file after transcription
   - Ensure cleanup happens even when transcription fails
   - Add warning messages for cleanup failures without failing main operation
   - _Requirements: 6.1, 6.2, 6.3_
 
-- [ ] 11. Implement output formatting and display
+- [x] 11. Implement output formatting and display
   - Create function to format and display transcription text to stdout
   - Add clear error message display for various failure scenarios
   - Implement user-friendly progress messages throughout the process
   - _Requirements: 5.2, 5.3_
 
-- [ ] 12. Integrate all components in main workflow
+- [x] 12. Integrate all components in main workflow
   - Wire together all components in main function with proper error propagation
   - Implement the complete workflow: parse args → validate → upload → transcribe → poll → retrieve → cleanup → display
   - Add comprehensive error handling and user feedback throughout the workflow

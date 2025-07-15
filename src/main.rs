@@ -60,7 +60,7 @@ async fn create_aws_clients() -> Result<AwsClients, AppError> {
     // Test AWS credentials by making a simple call
     match s3_client.list_buckets().send().await {
         Ok(_) => {
-            println!("✓ AWS credentials validated successfully");
+            println!("✅ AWS credentials validated successfully");
         }
         Err(e) => {
             return Err(AppError::Aws(format!(
@@ -115,7 +115,7 @@ async fn upload_file_to_s3(
     // Upload the file
     match put_object_req.send().await {
         Ok(_) => {
-            println!("✓ File uploaded successfully ({:.2} MB)", 
+            println!("✅ File uploaded successfully ({:.2} MB)", 
                      file_size as f64 / (1024.0 * 1024.0));
             Ok(format!("s3://{}/{}", bucket, s3_key))
         }
@@ -141,7 +141,7 @@ async fn delete_file_from_s3(
         .await
     {
         Ok(_) => {
-            println!("✓ S3 file deleted successfully");
+            println!("✅ S3 file deleted successfully");
             Ok(())
         }
         Err(e) => {
@@ -190,7 +190,7 @@ async fn start_transcription_job(
         .await
     {
         Ok(_) => {
-            println!("✓ Transcription job started successfully");
+            println!("✅ Transcription job started successfully");
             Ok(())
         }
         Err(e) => {
@@ -236,7 +236,7 @@ async fn poll_transcription_status(
                         Some(aws_sdk_transcribe::types::TranscriptionJobStatus::Completed) => {
                             if let Some(transcript) = job.transcript() {
                                 if let Some(uri) = transcript.transcript_file_uri() {
-                                    println!("✓ Transcription job completed successfully");
+                                    println!("✅ Transcription job completed successfully");
                                     return Ok(TranscriptionStatus::Completed(uri.to_string()));
                                 }
                             }
@@ -272,6 +272,46 @@ async fn poll_transcription_status(
     }
     
     Err(AppError::Transcribe("Transcription job timed out".to_string()))
+}
+
+/// Retrieve and parse transcription results from the result URI
+async fn get_transcription_result(result_uri: &str) -> Result<String, AppError> {
+    println!("📥 Retrieving transcription results...");
+    
+    // Make HTTP request to get the transcription JSON
+    let response = reqwest::get(result_uri).await
+        .map_err(|e| AppError::Transcribe(format!("Failed to fetch transcription results: {}", e)))?;
+    
+    if !response.status().is_success() {
+        return Err(AppError::Transcribe(format!(
+            "Failed to fetch transcription results: HTTP {}",
+            response.status()
+        )));
+    }
+    
+    let json_text = response.text().await
+        .map_err(|e| AppError::Transcribe(format!("Failed to read transcription response: {}", e)))?;
+    
+    // Parse the JSON to extract the transcript text
+    let json_value: serde_json::Value = serde_json::from_str(&json_text)
+        .map_err(|e| AppError::Transcribe(format!("Failed to parse transcription JSON: {}", e)))?;
+    
+    // Navigate the JSON structure to extract the transcript text
+    let transcript_text = json_value
+        .get("results")
+        .and_then(|results| results.get("transcripts"))
+        .and_then(|transcripts| transcripts.as_array())
+        .and_then(|arr| arr.first())
+        .and_then(|transcript| transcript.get("transcript"))
+        .and_then(|text| text.as_str())
+        .ok_or_else(|| AppError::Transcribe("No transcript text found in results".to_string()))?;
+    
+    if transcript_text.trim().is_empty() {
+        return Err(AppError::Transcribe("Transcription result is empty".to_string()));
+    }
+    
+    println!("✅ Transcription results retrieved successfully");
+    Ok(transcript_text.to_string())
 }
 
 /// Supported video file extensions based on Amazon Transcribe documentation
@@ -321,7 +361,7 @@ fn validate_video_file(path: &Path) -> Result<(), AppError> {
         return Err(AppError::File("File is empty".to_string()));
     }
     
-    println!("✓ File validation passed: {} ({:.2} MB)", 
+    println!("✅ File validation passed: {} ({:.2} MB)", 
              path.display(), 
              file_size as f64 / (1024.0 * 1024.0));
     
@@ -414,7 +454,13 @@ async fn run_transcription(args: CliArgs) -> Result<(), AppError> {
     match transcription_status {
         TranscriptionStatus::Completed(result_uri) => {
             println!("🎉 Transcription completed! Result URI: {}", result_uri);
-            // TODO: Retrieve and display results
+            
+            // Retrieve and display results
+            let transcript_text = get_transcription_result(&result_uri).await?;
+            println!("\n📝 Transcription Results:");
+            println!("─────────────────────────");
+            println!("{}", transcript_text);
+            println!("─────────────────────────");
         }
         TranscriptionStatus::Failed(reason) => {
             return Err(AppError::Transcribe(format!("Transcription failed: {}", reason)));
@@ -424,8 +470,9 @@ async fn run_transcription(args: CliArgs) -> Result<(), AppError> {
         }
     }
     
-    // TODO: Retrieve and display results
-    // TODO: Clean up resources
+    // Clean up resources
+    let s3_key = generate_s3_key(&args.video_file);
+    delete_file_from_s3(&aws_clients.s3_client, &args.s3_bucket, &s3_key).await?;
     
     Ok(())
 }
