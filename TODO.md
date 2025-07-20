@@ -3,8 +3,6 @@
 This document tracks planned features, improvements, and known issues for Prepis.
 
 ## In Progress
-- [x] Support outputing transcriptions to a file
-- [ ] Upload progress bar
 
 ## Up Next
 - [ ] Support for additional languages beyond English
@@ -19,6 +17,8 @@ This document tracks planned features, improvements, and known issues for Prepis
 ## Completed
 - [x] ~~Basic transcription workflow~~ (2025-07-14 - v0.1.0)
 - [x] ~~Error handling improvements~~ (2025-07-18 - v0.1.1)
+- [x] ~~Support outputing transcriptions to a file~~ (2025-07-20 - v0.2.0)
+- [X] ~~Upload progress bar~~ (2025-07-20 - v0.2.0)
 
 ## Known Issues
 - No way to handle cleanup after a failed run.
