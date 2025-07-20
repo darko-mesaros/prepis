@@ -119,6 +119,35 @@ aws s3 mb s3://your-transcription-bucket
 6. **Display** - Shows formatted transcription text
 7. **Cleanup** - Removes temporary S3 files
 
+## Project Structure
+
+The codebase is organized into the following modules:
+
+```
+src/
+├── main.rs              # Entry point, CLI handling and workflow orchestration
+├── error.rs             # Error types and user-friendly error display
+├── models.rs            # Data structures and enums
+├── utils.rs             # Utility functions for generating keys and job names
+├── aws/
+│   ├── mod.rs           # AWS module exports
+│   ├── client.rs        # AWS client initialization and configuration
+│   ├── s3.rs            # S3 operations for file upload and cleanup
+│   └── transcribe.rs    # Transcribe job management and result processing
+└── file/
+    ├── mod.rs           # File module exports
+    └── validation.rs    # File validation and transcription saving
+```
+
+Each module has a specific responsibility:
+
+- **main.rs**: Orchestrates the overall transcription workflow
+- **error.rs**: Defines error types and provides user-friendly error messages
+- **models.rs**: Contains data structures used throughout the application
+- **utils.rs**: Provides utility functions for generating unique identifiers
+- **aws/**: Handles all AWS service interactions
+- **file/**: Manages file validation and operations
+
 ## Supported File Formats
 
 | Video | Audio | Max Size | Max Duration |
