@@ -23,6 +23,7 @@ mod aws;
 mod error;
 mod file;
 mod models;
+mod progress;
 mod utils;
 
 use clap::Parser;
