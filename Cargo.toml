@@ -1,6 +1,6 @@
 [package]
 name = "prepis"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2024"
 description = "A command line utility that uses Amazon Transcribe to create video transcriptions"
 authors = ["Darko Mesaros <d@rko.rs>"]
@@ -23,3 +23,7 @@ tokio = { version = "1.23", features = ["full"] }
 thiserror = "1.0"
 reqwest = "0.11"
 serde_json = "1.0"
+indicatif = "0.17"
+tokio-stream = "0.1"
+futures-util = "0.3"
+atty = "0.2"
