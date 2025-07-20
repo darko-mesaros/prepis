@@ -41,8 +41,8 @@ impl UploadStrategy {
     /// Determine upload strategy based on file size
     /// Files >= 50MB use multipart upload
     pub fn determine(file_size: u64) -> Self {
-        const MULTIPART_THRESHOLD: u64 = 50 * 1024 * 1024; // 50MB
-        const PART_SIZE: usize = 8 * 1024 * 1024; // 8MB parts
+        const MULTIPART_THRESHOLD: u64 = 100 * 1024 * 1024; // 100MB
+        const PART_SIZE: usize = 10 * 1024 * 1024; // 10MB parts
 
         if file_size >= MULTIPART_THRESHOLD {
             Self::Multipart { part_size: PART_SIZE }
