@@ -169,18 +169,27 @@ async fn upload_file_multipart_with_progress(
     
     // Open file for reading
     let mut file = File::open(file_path).await?;
-    let mut part_number = 1;
+    let mut part_number = 1i32; // Ensure correct type for AWS API
     let mut completed_parts = Vec::new();
     let mut buffer = vec![0u8; part_size];
     
     loop {
-        let bytes_read = file.read(&mut buffer).await?;
-        if bytes_read == 0 {
-            break;
+        // Read exactly part_size bytes, or whatever remains
+        let mut total_read = 0;
+        while total_read < part_size {
+            let bytes_read = file.read(&mut buffer[total_read..]).await?;
+            if bytes_read == 0 {
+                break; // End of file
+            }
+            total_read += bytes_read;
+        }
+        
+        if total_read == 0 {
+            break; // No more data to read
         }
         
         // Upload this part
-        let part_data = buffer[..bytes_read].to_vec();
+        let part_data = buffer[..total_read].to_vec();
         let upload_part_res = s3_client
             .upload_part()
             .bucket(bucket)
@@ -214,25 +223,31 @@ async fn upload_file_multipart_with_progress(
             })?;
         
         // Store completed part info
-        if let Some(etag) = upload_part_res.e_tag() {
-            completed_parts.push(
-                aws_sdk_s3::types::CompletedPart::builder()
-                    .part_number(part_number)
-                    .e_tag(etag)
-                    .build(),
-            );
-        }
+        let etag = upload_part_res.e_tag()
+            .ok_or_else(|| AppError::S3(format!("No ETag returned for part {}", part_number)))?;
+        
+        completed_parts.push(
+            aws_sdk_s3::types::CompletedPart::builder()
+                .part_number(part_number)
+                .e_tag(etag)
+                .build(),
+        );
         
         // Update progress
-        progress_tracker.update_progress(bytes_read as u64);
+        progress_tracker.update_progress(total_read as u64);
         part_number += 1;
+    }
+    
+    // Check if we have any parts
+    if completed_parts.is_empty() {
+        progress_tracker.abandon();
+        return Err(AppError::S3("No parts were successfully uploaded".to_string()));
     }
     
     // Complete the multipart upload
     let completed_multipart_upload = aws_sdk_s3::types::CompletedMultipartUpload::builder()
         .set_parts(Some(completed_parts))
         .build();
-    
     match s3_client
         .complete_multipart_upload()
         .bucket(bucket)
@@ -250,7 +265,7 @@ async fn upload_file_multipart_with_progress(
             progress_tracker.abandon();
             
             // Attempt to abort the multipart upload
-            if let Err(e) = s3_client
+            if let Err(abort_err) = s3_client
                 .abort_multipart_upload()
                 .bucket(bucket)
                 .key(s3_key)
@@ -258,7 +273,7 @@ async fn upload_file_multipart_with_progress(
                 .send()
                 .await
             {
-                eprintln!("⚠️  Warning: Failed to abort multipart upload: {}", e);
+                eprintln!("⚠️  Warning: Failed to abort multipart upload: {}", abort_err);
             }
             
             Err(AppError::S3(format!("Failed to complete multipart upload: {}", e)))

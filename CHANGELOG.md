@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [0.2.1] - 2025-07-20
+
+### Changed
+- Fixed multi-part uploads, so I use a fixed part size
+
 ## [0.2.0] - 2025-07-20
 
 ### Added
@@ -31,7 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ability to upload files and have them transcribed
 
 
-[unreleased]: https://github.com/darko-mesaros/prepis/compare/v0.2.0...HEAD
+[unreleased]: https://github.com/darko-mesaros/prepis/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/darko-mesaros/prepis/releases/tag/v0.2.1
 [0.2.0]: https://github.com/darko-mesaros/prepis/releases/tag/v0.2.0
 [0.1.1]: https://github.com/darko-mesaros/prepis/releases/tag/v0.1.1
 [0.1.0]: https://github.com/darko-mesaros/prepis/releases/tag/v0.1.0
