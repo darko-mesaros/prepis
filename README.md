@@ -125,40 +125,6 @@ aws s3 mb s3://your-transcription-bucket
 |-------|-------|----------|--------------|
 | MP4, MOV, AVI, FLV, WebM, MKV | MP3, WAV, FLAC, M4A | 2GB | 4 hours |
 
-## Example Output
-
-```
-Video Transcription CLI
-Video file: "presentation.mp4"
-S3 bucket: my-bucket
-
-✓ File validation passed: presentation.mp4 (15.23 MB)
-🔧 Initializing AWS clients...
-✓ AWS credentials validated successfully
-📤 Uploading file to S3: s3://my-bucket/transcribe-temp/1642123456-presentation.mp4
-✓ File uploaded successfully (15.23 MB)
-📍 S3 URI: s3://my-bucket/transcribe-temp/1642123456-presentation.mp4
-🎙️  Starting transcription job: transcribe-job-1642123456-presentation
-✓ Transcription job started successfully
-⏳ Polling transcription job status...
-🔍 Checking status (attempt 1/120)
-⏳ Job still in progress...
-⏰ Waiting 5 seconds before next check...
-🔍 Checking status (attempt 2/120)
-✓ Transcription job completed successfully
-🎉 Transcription completed! Result URI: https://...
-📥 Retrieving transcription results...
-✓ Transcription results retrieved successfully
-
-📝 Transcription Results:
-─────────────────────────
-Hello everyone, welcome to today's presentation about our quarterly results...
-─────────────────────────
-
-🗑️  Cleaning up S3 file: s3://my-bucket/transcribe-temp/1642123456-presentation.mp4
-✓ S3 file deleted successfully
-```
-
 ## Error Handling
 
 The application provides helpful error messages for common issues:
@@ -168,30 +134,6 @@ The application provides helpful error messages for common issues:
 - **AWS credential issues**: Guides through credential setup
 - **S3 access problems**: Verifies bucket permissions
 - **Transcription failures**: Shows detailed error reasons
-
-## Development
-
-### Project Structure
-
-```
-src/
-├── main.rs          # Main application logic
-├── error.rs         # Error handling (integrated in main.rs)
-├── aws.rs           # AWS client management (integrated in main.rs)
-├── transcribe.rs    # Transcription logic (integrated in main.rs)
-└── utils.rs         # Utility functions (integrated in main.rs)
-```
-
-### Dependencies
-
-- **clap** - Command line argument parsing
-- **tokio** - Async runtime
-- **aws-config** - AWS configuration
-- **aws-sdk-s3** - S3 operations
-- **aws-sdk-transcribe** - Transcription services
-- **thiserror** - Error handling
-- **reqwest** - HTTP client for result retrieval
-- **serde_json** - JSON parsing
 
 ## Troubleshooting
 
