@@ -6,9 +6,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Error)]
 enum AppError {
-    #[error("CLI argument error: {0}")]
-    Cli(String),
-    
+
     #[error("File error: {0}")]
     File(String),
     
@@ -37,8 +35,6 @@ impl From<aws_sdk_transcribe::Error> for AppError {
         AppError::Transcribe(err.to_string())
     }
 }
-
-// Additional AWS error conversions can be added as needed
 
 /// AWS clients container
 struct AwsClients {
@@ -80,7 +76,7 @@ async fn create_aws_clients() -> Result<AwsClients, AppError> {
 fn generate_s3_key(file_path: &Path) -> String {
     let timestamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .unwrap()
+        .unwrap() // TODO: Handle unwrap
         .as_secs();
     
     let filename = file_path
@@ -100,6 +96,7 @@ async fn upload_file_to_s3(
     let s3_key = generate_s3_key(file_path);
     
     println!("📤 Uploading file to S3: s3://{}/{}", bucket, s3_key);
+    println!("📤 NOTE: This file will be deleted at the end");
     
     // Read the file content
     let file_content = tokio::fs::read(file_path).await?;
@@ -146,7 +143,7 @@ async fn delete_file_from_s3(
         }
         Err(e) => {
             // Log warning but don't fail the operation
-            eprintln!("⚠️  Warning: Failed to delete S3 file: {}", e);
+            eprintln!("⚠️  Warning: Failed to delete S3 file, please do so manually: {}", e);
             Ok(())
         }
     }
@@ -156,7 +153,7 @@ async fn delete_file_from_s3(
 fn generate_job_name(file_path: &Path) -> String {
     let timestamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .unwrap()
+        .unwrap() // TODO: Handle unwrap
         .as_secs();
     
     let filename = file_path
@@ -194,7 +191,7 @@ async fn start_transcription_job(
             Ok(())
         }
         Err(e) => {
-            Err(AppError::Transcribe(format!("Failed to start transcription job: {}", e)))
+            Err(AppError::Transcribe(format!("🛑 Error: Failed to start transcription job: {}", e)))
         }
     }
 }
@@ -202,7 +199,6 @@ async fn start_transcription_job(
 /// Transcription job status enum
 #[derive(Debug)]
 enum TranscriptionStatus {
-    InProgress,
     Completed(String), // Contains result URI
     Failed(String),    // Contains failure reason
 }
@@ -305,6 +301,7 @@ async fn get_transcription_result(result_uri: &str) -> Result<String, AppError> 
         .and_then(|transcript| transcript.get("transcript"))
         .and_then(|text| text.as_str())
         .ok_or_else(|| AppError::Transcribe("No transcript text found in results".to_string()))?;
+    // TODO: This 👆 can be cleaner as a Struct
     
     if transcript_text.trim().is_empty() {
         return Err(AppError::Transcribe("Transcription result is empty".to_string()));
@@ -320,7 +317,7 @@ const SUPPORTED_EXTENSIONS: &[&str] = &[
 ];
 
 /// Maximum file size supported by Amazon Transcribe (2GB)
-const MAX_FILE_SIZE: u64 = 2 * 1024 * 1024 * 1024; // 2GB in bytes
+const MAX_FILE_SIZE: u64 = 2 * 1024 * 1024 * 1024; // 2GB in bytes - TODO: Make this customizable
 
 /// Validate that the video file exists, is readable, has a supported format, and is within size limits
 fn validate_video_file(path: &Path) -> Result<(), AppError> {
@@ -352,8 +349,9 @@ fn validate_video_file(path: &Path) -> Result<(), AppError> {
     
     if file_size > MAX_FILE_SIZE {
         return Err(AppError::File(format!(
-            "File size ({:.2} MB) exceeds maximum limit of 2GB",
-            file_size as f64 / (1024.0 * 1024.0)
+            "File size ({:.2} MB) exceeds maximum limit of {} GB", // TODO: Make this flexibe MB/GB
+            file_size as f64 / (1024.0 * 1024.0),
+            MAX_FILE_SIZE
         )));
     }
     
@@ -395,10 +393,6 @@ fn display_error(error: &AppError) {
     
     // Display additional context for specific error types
     match error {
-        AppError::Cli(_) => {
-            eprintln!("Please check your command line arguments.");
-            eprintln!("Use --help for usage information.");
-        }
         AppError::File(_) => {
             eprintln!("Please verify the file path and permissions.");
         }
@@ -465,9 +459,7 @@ async fn run_transcription(args: CliArgs) -> Result<(), AppError> {
         TranscriptionStatus::Failed(reason) => {
             return Err(AppError::Transcribe(format!("Transcription failed: {}", reason)));
         }
-        TranscriptionStatus::InProgress => {
-            return Err(AppError::Transcribe("Unexpected: job still in progress after polling".to_string()));
-        }
+        
     }
     
     // Clean up resources

@@ -2,6 +2,8 @@
 
 Sometimes you just need to have a transcription of video and audio files, very very fast. Well, now you don't need to leave the command line for this.
 
+![prepis in action](/img/prepis.gif)
+
 ## Features
 
 - 🎥 **Multiple Format Support** - MP4, MOV, AVI, FLV, MP3, WAV, FLAC, M4A, WebM, MKV
