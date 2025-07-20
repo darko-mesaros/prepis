@@ -3,13 +3,14 @@
 This document tracks planned features, improvements, and known issues for Prepis.
 
 ## In Progress
+- [x] Support outputing transcriptions to a file
 - [ ] Upload progress bar
 
 ## Up Next
 - [ ] Support for additional languages beyond English
 - [ ] Implement batch processing for multiple files
 - [ ] Add configuration file support for default settings
-- [ ] Support outputing transcriptions to a file
+- [ ] Better polling messaging (use indicatif)
 
 ## Backlog
 - [ ] Integration with other transcription services beyond Amazon Transcribe

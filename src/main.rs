@@ -373,6 +373,12 @@ fn get_file_extension(path: &Path) -> Option<String> {
         .map(|ext| ext.to_string())
 }
 
+/// Save transcription to disk
+fn save_transcription(path: impl AsRef<Path>, content: &str) -> Result<(), AppError> {
+    fs::write(path, content)?;
+    Ok(())
+}
+
 #[derive(Parser)]
 #[command(name = "prepis")]
 #[command(about = "A CLI tool to transcribe video files using Amazon Transcribe")]
@@ -385,11 +391,16 @@ struct CliArgs {
     /// S3 bucket name to use for temporary file storage
     #[arg(help = "S3 bucket name for temporary storage")]
     s3_bucket: String,
+
+    /// Output filename for the transcription
+    #[arg(help = "S3 bucket name for temporary storage")]
+    output_file: Option<PathBuf>,
+
 }
 
 /// Display error messages in a user-friendly format
 fn display_error(error: &AppError) {
-    eprintln!("Error: {}", error);
+    eprintln!("🛑 Error: {}", error);
     
     // Display additional context for specific error types
     match error {
@@ -427,6 +438,9 @@ async fn run_transcription(args: CliArgs) -> Result<(), AppError> {
     println!("Video Transcription CLI");
     println!("Video file: {:?}", args.video_file);
     println!("S3 bucket: {}", args.s3_bucket);
+    if let Some(filename) = &args.output_file {
+        println!("Output file: {}", filename.to_string_lossy());
+    }
     
     // Validate the video file
     validate_video_file(&args.video_file)?;
@@ -455,6 +469,11 @@ async fn run_transcription(args: CliArgs) -> Result<(), AppError> {
             println!("─────────────────────────");
             println!("{}", transcript_text);
             println!("─────────────────────────");
+
+            if let Some(filename) = &args.output_file {
+                println!("💾 Saving transcription to: {}", filename.to_string_lossy());
+                save_transcription(filename, &transcript_text)?;
+            }
         }
         TranscriptionStatus::Failed(reason) => {
             return Err(AppError::Transcribe(format!("Transcription failed: {}", reason)));
